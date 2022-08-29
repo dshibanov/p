@@ -1,1 +1,1 @@
-# p
+# p - Minimalist project manager
