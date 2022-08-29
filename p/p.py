@@ -61,20 +61,26 @@ def project_exists(name):
     return 0
 
 def create_project(name, args=[]):
+    pipfile = os.getenv('PROJECTS') +'/default/Pipfile.lock'
     if project_exists(name):
+        print('ERROR: PROJECT EXIST')
         return 0
 
     project_path = get_project_path(name)
     notes_path = get_notes_path(name)
-
-    print('p:', project_path, ' n: ', notes_path)
     os.mkdir(project_path)
     add_notebook(name)
+
     # add symlink
     src = notes_path
     dst = project_path + "@notes"
-    print('dst ', dst)
     os.symlink(src, dst)
+
+    if args.template == 'default':
+        os.popen(f'cp {pipfile} {project_path}')
+        os.chdir(project_path)
+        subprocess.run(["pipenv", "sync"])
+
     return 2
 
 def do_project(name):
@@ -87,6 +93,10 @@ def do_project(name):
     # working on project
     # path =  get_project_path(name)
     cmd = 'tmuxp load ' + name + ' -y'
+    print(cmd)
+    run(cmd)
+
+    cmd = 'nb notebooks use ' + name
     print(cmd)
     run(cmd)
     # run('tmuxp load ' + name + ' -y')
@@ -166,21 +176,22 @@ def main():
     group.add_argument('--delete', action='store_true')
     group.add_argument('--do', action='store_true')
     group.add_argument('--rename', action='store_true')
-    group.add_argument('--yh', action='store_true')
+
+
+    parser.add_argument('-t', '--template', nargs='?', const='c', default='default')
+
     parser.add_argument('name', type=str, nargs='?')
     parser.add_argument('name1', type=str, nargs='?')
 
     args = parser.parse_args()
 
     if args.add:
-        # print('name: ', args.name)
+        # print(args)
+        # return
         create_project(args.name, args)
     elif args.delete:
-        # print('delete')
         delete_project(args.name)
     elif args.rename:
-        # print(args.name)
-        # print(args.name1)
         rename(args.name, args.name1)
     elif args.do:
         do_project(args.name)
